@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # 1. 你的 FastAPI Web 服务
+  web:
+    build: .                    # 使用当前目录的 Dockerfile 构建
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"             # 映射端口
+    environment:
+      # ！！！关键：这里需要覆盖你 database.py 里的 DB_CONFIG ！！！
+      # 在容器网络中，host 是服务名 mysql_db，而不是 127.0.0.1
+      - DB_HOST=mysql_db
+      - DB_USER=root
+      - DB_PASSWORD=123456
+      - DB_NAME=ai_agent_db
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL}
+    depends_on:
+      mysql_db:
+        condition: service_healthy # 等 MySQL 健康检查通过后再启动 web
+    restart: always
+
+  # 2. MySQL 8.0 服务
+  mysql_db:
+    image: mysql:8.0
+    container_name: mysql_server
+    ports:
+      - "3307:3306"             # 映射到宿主机，方便你用 Navicat 等工具连接
+    environment:
+      MYSQL_ROOT_PASSWORD: '123456'
+      MYSQL_DATABASE: 'ai_agent_db'
+    volumes:
+      - mysql_data:/var/lib/mysql # 数据持久化，防止容器重启数据丢失
+    healthcheck:                # 健康检查，确保 web 服务等 MySQL 完全就绪
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: always
+
+# 定义持久化数据卷
+volumes:
+  mysql_data:

@@ -8,14 +8,15 @@ from contextlib import closing
 # ============================================================
 # 数据库配置：替换为你刚才连接成功的本地 MySQL 信息
 # ============================================================
+
 DB_CONFIG = {
-    'host': '127.0.0.1',
-    'port': 3306,
-    'user': 'root',
-    'password': '123456',
-    'database': 'ai_agent_db',
-    'charset': 'utf8mb4',      # 支持完整的 Emoji 和特殊字符
-    'cursorclass': DictCursor  # 让查询结果可按列名访问，类似 sqlite3.Row
+    'host': os.getenv('DB_HOST', '127.0.0.1'),       # 在 Docker 里会自动读取为 mysql_db
+    'port': int(os.getenv('DB_PORT', 3306)),
+    'user': os.getenv('DB_USER', 'root'),
+    'password': os.getenv('DB_PASSWORD', '123456'),
+    'database': os.getenv('DB_NAME', 'ai_agent_db'),
+    'charset': 'utf8mb4',
+    'cursorclass': DictCursor # 注意：要确保你上面有 from pymysql.cursors import DictCursor
 }
 
 # ============================================================
