@@ -1,3 +1,4 @@
+
 # 🎓 超级大学生日程管家 (AI Schedule Master)
 
 > 一款基于大语言模型（LLM）与多格式文件解析的智能时间管理助手。告别繁琐的死记硬背，直接把课表、排班表扔给 AI，一句话帮你查出时间冲突！
@@ -6,6 +7,8 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0+-orange.svg)
 ![LangChain](https://img.shields.io/badge/LangChain-Framework-yellow.svg)
+![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg)
+![JWT](https://img.shields.io/badge/Security-JWT-red.svg)
 
 ---
 
@@ -13,52 +16,58 @@
 
 - 📂 **多格式文件解析**：支持同时上传多个 `.txt` 或 `.csv` 格式的课表与部门排班表，前端利用 `FileReader` 异步读取，无缝拼接给大模型。
 - 🧠 **大模型原生推理**：抛弃传统的 `if-else` 时间比对，直接利用 DeepSeek 强大的长上下文语义理解能力，跨文本进行时间冲突排查。
+- 🕒 **Agent 工具调用 (Tool Calling)**：为大模型挂载 `get_current_time` 等自定义工具，解决了 LLM 无法获取真实系统时间（“今天/明天”）的认知盲区。
+- 🔒 **JWT 用户鉴权**：独立的用户注册与登录系统，底层使用 `bcrypt` 密码哈希加密，并基于 `Depends` 实现接口级安全拦截，拒绝未授权访问。
 - ⚡ **流式打字机输出**：基于 FastAPI 的 `StreamingResponse` 与前端 `ReadableStream`，实现文字逐字吐出，彻底告别等待焦虑。
 - 💾 **企业级数据持久化**：底层重构为 **MySQL** 数据库，利用 `PyMySQL` 与 `DictCursor` 实现聊天记录的隔离与高效存储。
-- 🛡️ **高健壮性**：前后端全面捕获异常，针对大模型换行符断流、数据库连接超时等边缘场景做了完善的防坑处理。
+- 🐳 **Docker 容器化部署**：编写 `Dockerfile` 与 `docker-compose.yml`，实现前后端及数据库的一键打包与跨平台部署。
 
 ## 🛠️ 技术栈 (Tech Stack)
 
-- **前端**：HTML5, CSS3, Vanilla JavaScript (Fetch API, FileReader, ReadableStream)
+- **前端**：HTML5, CSS3, Vanilla JavaScript (Fetch API, FileReader, ReadableStream, LocalStorage)
 - **后端**：Python 3.10, FastAPI, Uvicorn, Pydantic
 - **AI 驱动**：LangChain, DeepSeek API
+- **安全与鉴权**：JWT (python-jose), Bcrypt (passlib)
 - **数据库**：MySQL, PyMySQL
+- **部署**：Docker, Docker Compose
 
 ---
 
 ## 🚀 快速开始 (Quick Start)
 
-### 1. 环境准备
-确保你的电脑上安装了 Python 3.10+ 和 MySQL 8.0+。
-
-### 2. 安装依赖
+### 方式一：Docker 一键部署（推荐）
+确保你的电脑上安装了 Docker Desktop。
 ```bash
-pip install fastapi uvicorn pymysql pydantic langchain langchain-deepseek
+# 在根目录下执行，自动构建镜像并启动 MySQL 与 FastAPI 容器
+docker compose up -d
 ```
 
-### 3. 配置环境变量
-在项目根目录下新建一个 `.env` 文件，填入你的 API Key 和数据库配置：
+### 方式二：本地开发运行
+**1. 安装依赖**
+```bash
+pip install -r requirements.txt
+```
+
+**2. 配置环境变量**
+在项目根目录下新建 `.env` 文件，填入你的 API Key：
 ```env
 DEEPSEEK_API_KEY=你的DeepSeek密钥
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 ```
 
-*(注意：请在 `database.py` 中配置你本地的 MySQL 账号和密码)*
-
-### 4. 启动后端服务
+**3. 启动后端服务**
 ```bash
 uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-### 5. 运行前端
-直接在浏览器中双击打开 `index.html` 即可使用。上传你的课表文件，开始提问吧！
+**4. 运行前端**
+直接在浏览器中双击打开 `index.html` 即可使用。上传你的课表文件，注册登录后开始提问吧！
 
 ---
 
 ## 📸 界面展示 (Screenshots)
 
 ![pnDnXjI.png](https://s41.ax1x.com/2026/10/23/pnDnXjI.png)
-
 
 ---
 
@@ -68,6 +77,8 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 1. **SSE (Server-Sent Events) 流式传输**：解决了大模型生成长文本时的 HTTP 超时与阻塞问题。
 2. **JSON 安全包装**：解决了流式传输中，大模型输出带有 `\n` 换行符导致前端 `split('\n\n')` 解析错乱的 Bug。
 3. **异步数据库落盘**：引入 `BackgroundTasks`，确保在流式输出结束后，数据库写入不会卡住网络连接。
+4. **Agent 工具幻觉排查**：修复了 LangGraph 底层流式输出时 `dict` 与对象格式混杂导致的 `.content` 属性崩溃问题。
+5. **容器化网络通信**：配置 Docker 内部网络，解决宿主环境与容器环境（MySQL）跨网络连接失败的坑。
 
 ## 📄 开源协议 (License)
 
