@@ -1,12 +1,23 @@
 import os
 import json
 from dotenv import load_dotenv
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from database import save_message, load_history
-from agent import model
+from langchain_core.messages import HumanMessage
+
+# 导入你的数据库操作和模型
+from database import init_db, save_message, load_history, create_user, get_user
+from agent import agent
+
+# 导入 JWT 鉴权相关的全部功能
+from auth import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    get_current_user_id
+)
 
 load_dotenv(override=True)
 
@@ -16,30 +27,81 @@ app.add_middleware(
 )
 
 
+# 启动时建表
+@app.on_event("startup")
+def on_startup():
+    init_db()
+    print("✅ 数据库表检查/创建完毕！")
+
+
+# ==========================================
+# 1. 请求体模型
+# ==========================================
 class FlexibleRequest(BaseModel):
     question: str
     all_files_content: str
     thread_id: str
 
 
+class AuthRequest(BaseModel):
+    username: str
+    password: str
+
+
+# ==========================================
+# 2. 注册与登录
+# ==========================================
+@app.post("/register")
+def register(req: AuthRequest):
+    hashed_pwd = hash_password(req.password)
+    ok = create_user(req.username, hashed_pwd)
+    if ok:
+        return {"msg": "注册成功"}
+    return {"msg": "用户名已存在"}
+
+
+@app.post("/login")
+def login(req: AuthRequest):
+    user = get_user(req.username)
+    if user is None:
+        return {"msg": "密码或用户名错误"}
+    if verify_password(req.password, user["password"]):
+        token = create_access_token(user_id=user["id"])
+        return {"msg": "登录成功", "token": token}
+    return {"msg": "密码或用户名错误"}
+
+
+# ==========================================
+# 3. 流式生成器（深度修复 Agent 字典解析版）
+# ==========================================
 async def generate_stream(prompt: str, thread_id: str, background_tasks: BackgroundTasks):
     full_response = ""
+    inputs = {"messages": [HumanMessage(content=prompt)]}
 
-    # 流式生成
-    async for chunk in model.astream(prompt):
-        content = chunk.content if chunk.content else ""
-        if content:
-            full_response += content
-            # 把文字包装成 JSON，避免换行符搞崩前端解析
-            json_data = json.dumps({"text": content})
-            yield f"data: {json_data}\n\n"
+    try:
+        # 核心大招：stream_mode="messages" 直接抓底层大模型吐出来的字！
+        async for msg, metadata in agent.astream(inputs, stream_mode="messages"):
+            # 只要是大模型吐出来的文字（排除掉工具返回的内部消息）
+            if msg.content and metadata.get("langgraph_node") in ["agent", "model"]:
+                content = msg.content
+                full_response += content
+                json_data = json.dumps({"text": content})
+                yield f"data: {json_data}\n\n"
 
-    # 使用 background_tasks 在后台存数据库，绝对不卡住流式输出
+    except Exception as e:
+        print(f"❌ 流式输出崩溃: {e}")
+        yield f"data: {json.dumps({'text': f'[系统错误] {e}'})}\n\n"
+
     background_tasks.add_task(save_message, thread_id, "assistant", full_response)
-
-
+# ==========================================
+# 4. 受保护的日程接口
+# ==========================================
 @app.post("/check_flexible")
-async def check_flexible(req: FlexibleRequest, background_tasks: BackgroundTasks):
+async def check_flexible(
+        req: FlexibleRequest,
+        background_tasks: BackgroundTasks,
+        user_id: str = Depends(get_current_user_id)
+):
     prompt = f"""
     你是一个极其聪明的大学时间管理助手。用户上传了各种文件，里面包含了他的课表、各个部门的排班、志愿活动等乱七八糟的信息。
     以下是文件里的所有内容：
@@ -48,9 +110,10 @@ async def check_flexible(req: FlexibleRequest, background_tasks: BackgroundTasks
     {req.question}
     请仔细阅读文件内容，找出所有与用户问题相关的时间安排，判断是否有时间冲突。
     如果用户问的时间段有安排，请直接列出有哪些安排并警告冲突。如果没有安排，请回复空闲。
+
+    【极其重要】：如果用户问题中提到了“今天”、“明天”等相对时间，你必须先调用 get_current_time 工具获取真实的当前时间，然后再做判断！
     """
 
-    # 存用户消息也用后台任务
     background_tasks.add_task(save_message, req.thread_id, "user", req.question)
 
     return StreamingResponse(

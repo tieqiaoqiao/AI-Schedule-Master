@@ -16,7 +16,7 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD', '123456'),
     'database': os.getenv('DB_NAME', 'ai_agent_db'),
     'charset': 'utf8mb4',
-    'cursorclass': DictCursor # 注意：要确保你上面有 from pymysql.cursors import DictCursor
+    'cursorclass': DictCursor  # 注意：要确保你上面有 from pymysql.cursors import DictCursor
 }
 
 # ============================================================
@@ -28,7 +28,7 @@ def get_db_connection():
     return conn
 
 # ============================================================
-# 初始化数据库：建 messages（消息）和 sessions（会话元数据）两张表
+# 初始化数据库：建 messages（消息）、sessions（会话元数据）、users（用户）三张表
 # ============================================================
 def init_db():
     with closing(get_db_connection()) as conn:
@@ -50,6 +50,13 @@ def init_db():
                     title VARCHAR(255) NOT NULL,
                     uid VARCHAR(255),
                     updated_at VARCHAR(50) NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    username VARCHAR(255) NOT NULL UNIQUE,
+                    password VARCHAR(255) NOT NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """)
         conn.commit()
@@ -158,3 +165,39 @@ def delete_session(thread_id: str):
         except Exception as e:
             conn.rollback()
             print(f"删除会话失败: {e}")
+
+# ============================================================
+# 用户注册 / 登录
+# ============================================================
+def create_user(username: str, password: str):
+    """把 username / password 原样存入 users 表。
+    返回 True 表示注册成功，False 表示用户名已存在。"""
+    with closing(get_db_connection()) as conn:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO users (username, password) VALUES (%s, %s)",
+                    (username, password),
+                )
+            conn.commit()
+            return True
+        except pymysql.err.IntegrityError:
+            # username 上有 UNIQUE 约束时会触发
+            conn.rollback()
+            return False
+        except Exception as e:
+            conn.rollback()
+            print(f"注册用户失败: {e}")
+            return False
+
+
+def get_user(username: str):
+    """按用户名查用户，返回字典或 None。"""
+    with closing(get_db_connection()) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, username, password FROM users WHERE username = %s",
+                (username,),
+            )
+            row = cursor.fetchone()
+    return row if row else None
