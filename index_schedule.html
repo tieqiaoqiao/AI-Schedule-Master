@@ -8,28 +8,30 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            height: 100vh;
-            overflow: hidden;
+            height: 100vh; overflow: hidden;
             background: linear-gradient(135deg, #eef4ff 0%, #e6ecff 50%, #f5edff 100%);
-            display: flex;
-            flex-direction: column;
-            color: #3a4160;
+            display: flex; flex-direction: column; color: #3a4160;
         }
         .app-header {
-            padding: 20px 28px 16px;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(10px);
+            padding: 20px 28px 16px; text-align: center; position: relative;
+            background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(10px);
             border-bottom: 1px solid #dbe4ff;
         }
-        .app-header h1 {
-            font-size: 24px;
-            font-weight: 800;
-            color: #3344c2;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
+        .app-header h1 { font-size: 24px; font-weight: 800; color: #3344c2; letter-spacing: 1px; margin-bottom: 4px; }
         .app-header p { font-size: 13px; color: #8b95b8; }
+
+        .user-bar {
+            position: absolute; top: 18px; right: 24px;
+            display: flex; align-items: center; gap: 10px; font-size: 13px;
+        }
+        .user-name { color: #4356c9; font-weight: 600; }
+        .user-btn {
+            padding: 6px 14px; border-radius: 10px; border: 1px solid #cfd8ff;
+            background: #fff; color: #4356c9; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: background-color 0.15s;
+        }
+        .user-btn:hover { background: #eef2ff; }
+
         .chat-area {
             flex: 1; overflow-y: auto; padding: 28px 24px 12px;
             display: flex; flex-direction: column; gap: 18px;
@@ -53,11 +55,8 @@
             background: #ffffff; color: #3a4160; padding: 18px 20px;
             border-radius: 20px 20px 20px 5px; border: 1px solid #dbe4ff;
             box-shadow: 0 6px 18px rgba(150, 170, 255, 0.15); font-size: 15px; line-height: 1.75;
-            white-space: pre-wrap; word-break: break-word;
+            white-space: pre-wrap; word-break: break-word; min-height: 24px;
         }
-        .message.ai .bubble.loading { color: #4356c9; font-size: 14px; }
-        .message.ai .bubble.loading::after { content: '...'; animation: dots 1.5s steps(4, end) infinite; }
-        @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
         .attachment-tag {
             display: inline-block; margin-top: 10px; padding: 5px 12px;
             background: rgba(255, 255, 255, 0.25); border-radius: 999px; font-size: 12.5px; color: #fff;
@@ -101,6 +100,42 @@
         .send-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(90, 108, 240, 0.42); }
         .send-btn:active:not(:disabled) { transform: translateY(0); }
         .send-btn:disabled { background: #c3cbf5; cursor: not-allowed; box-shadow: none; }
+
+        /* ===== 登录 / 注册弹窗 ===== */
+        .modal-mask {
+            position: fixed; inset: 0; background: rgba(30, 38, 80, 0.45);
+            backdrop-filter: blur(4px); display: none;
+            align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal-mask.show { display: flex; }
+        .modal {
+            width: 360px; background: #fff; border-radius: 20px; padding: 28px 26px 24px;
+            box-shadow: 0 20px 60px rgba(40, 60, 140, 0.28);
+            animation: slideIn 0.25s ease-out;
+        }
+        .modal h2 { font-size: 20px; color: #3344c2; text-align: center; margin-bottom: 6px; }
+        .modal .subtitle { font-size: 12.5px; color: #8b95b8; text-align: center; margin-bottom: 20px; }
+        .modal .field { margin-bottom: 14px; }
+        .modal .field label { display: block; font-size: 13px; color: #5d689a; margin-bottom: 6px; font-weight: 600; }
+        .modal .field input {
+            width: 100%; padding: 12px 14px; border: 1.5px solid #dbe4ff; border-radius: 12px;
+            font-size: 14px; outline: none; background: #f7f9ff; color: #3a4160;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+        .modal .field input:focus { border-color: #7b8cff; background: #fff; box-shadow: 0 0 0 4px rgba(123, 140, 255, 0.18); }
+        .modal .error-msg { color: #e03131; font-size: 12.5px; min-height: 18px; margin-bottom: 10px; text-align: center; }
+        .modal .submit-btn {
+            width: 100%; height: 46px; border: none; border-radius: 13px;
+            background: linear-gradient(135deg, #7b8cff, #5a6cf0); color: #fff;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(90, 108, 240, 0.32);
+            transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+        }
+        .modal .submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(90, 108, 240, 0.42); }
+        .modal .submit-btn:disabled { background: #c3cbf5; cursor: not-allowed; box-shadow: none; }
+        .modal .switch-line { text-align: center; font-size: 13px; color: #8b95b8; margin-top: 16px; }
+        .modal .switch-line a { color: #4356c9; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .modal .switch-line a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -108,6 +143,7 @@
     <div class="app-header">
         <h1>🎓 超级大学生日程管家</h1>
         <p>上传课表 / 排班文件，随时向我提问，帮你查时间冲突</p>
+        <div class="user-bar" id="userBar"></div>
     </div>
 
     <div class="chat-area" id="chatArea">
@@ -127,9 +163,7 @@
                     <input type="file" id="fileInput" accept=".txt,.csv,text/plain,text/csv" multiple>
                 </label>
                 <input
-                    type="text"
-                    id="questionInput"
-                    class="question-input"
+                    type="text" id="questionInput" class="question-input"
                     placeholder="输入你的问题，例如：周三晚上有空吗？"
                     onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendMessage(); }"
                 >
@@ -138,14 +172,203 @@
         </div>
     </div>
 
+    <div class="modal-mask" id="authMask">
+        <div class="modal">
+            <h2 id="authTitle">登录</h2>
+            <p class="subtitle" id="authSubtitle">登录后才能发送消息</p>
+
+            <div class="field">
+                <label for="authUsername">账号</label>
+                <input type="text" id="authUsername" placeholder="请输入用户名" autocomplete="username">
+            </div>
+            <div class="field">
+                <label for="authPassword">密码</label>
+                <input type="password" id="authPassword" placeholder="请输入密码" autocomplete="current-password"
+                       onkeydown="if(event.key==='Enter'){ submitAuth(); }">
+            </div>
+
+            <div class="error-msg" id="authError"></div>
+
+            <button class="submit-btn" id="authSubmitBtn" onclick="submitAuth()">登录</button>
+
+            <p class="switch-line">
+                <span id="switchHint">还没有账号？</span>
+                <a id="switchAction" onclick="toggleAuthMode()">去注册</a>
+            </p>
+        </div>
+    </div>
+
     <script>
         const API_BASE = 'http://127.0.0.1:8000';
         const threadId = 'thread_' + Date.now().toString();
+
+        const TOKEN_KEY = 'schedule_agent_token';
+        const USER_KEY  = 'schedule_agent_username';
+
         let pendingFiles = [];
+        let authMode = 'login';
+
+        let currentToken = localStorage.getItem(TOKEN_KEY) || '';
+        let currentUser  = localStorage.getItem(USER_KEY)  || '';
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('fileInput').addEventListener('change', onFilesSelected);
+            renderUserBar();
+            if (!currentToken) {
+                openAuthModal('login');
+            }
         });
+
+        function renderUserBar() {
+            const bar = document.getElementById('userBar');
+            bar.innerHTML = '';
+            if (currentToken && currentUser) {
+                const name = document.createElement('span');
+                name.className = 'user-name';
+                name.textContent = '👤 ' + currentUser;
+
+                const logoutBtn = document.createElement('button');
+                logoutBtn.className = 'user-btn';
+                logoutBtn.textContent = '退出';
+                logoutBtn.onclick = logout;
+
+                bar.appendChild(name);
+                bar.appendChild(logoutBtn);
+            } else {
+                const loginBtn = document.createElement('button');
+                loginBtn.className = 'user-btn';
+                loginBtn.textContent = '登录 / 注册';
+                loginBtn.onclick = () => openAuthModal('login');
+                bar.appendChild(loginBtn);
+            }
+        }
+
+        function logout() {
+            currentToken = '';
+            currentUser = '';
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(USER_KEY);
+            renderUserBar();
+            openAuthModal('login');
+        }
+
+        function openAuthModal(mode) {
+            authMode = mode || 'login';
+            updateAuthModalText();
+            document.getElementById('authError').textContent = '';
+            document.getElementById('authUsername').value = '';
+            document.getElementById('authPassword').value = '';
+            document.getElementById('authMask').classList.add('show');
+            setTimeout(() => document.getElementById('authUsername').focus(), 50);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authMask').classList.remove('show');
+        }
+
+        function updateAuthModalText() {
+            const isLogin = authMode === 'login';
+            document.getElementById('authTitle').textContent = isLogin ? '登录' : '注册';
+            document.getElementById('authSubtitle').textContent = isLogin ? '登录后才能发送消息' : '注册一个账号开始使用';
+            document.getElementById('authSubmitBtn').textContent = isLogin ? '登录' : '注册';
+            document.getElementById('switchHint').textContent = isLogin ? '还没有账号？' : '已经有账号了？';
+            document.getElementById('switchAction').textContent = isLogin ? '去注册' : '去登录';
+        }
+
+        function toggleAuthMode() {
+            authMode = authMode === 'login' ? 'register' : 'login';
+            document.getElementById('authError').textContent = '';
+            updateAuthModalText();
+        }
+
+        async function submitAuth() {
+            const username = document.getElementById('authUsername').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const errEl = document.getElementById('authError');
+            const btn = document.getElementById('authSubmitBtn');
+
+            errEl.textContent = '';
+            if (!username) { errEl.textContent = '请输入账号'; return; }
+            if (!password) { errEl.textContent = '请输入密码'; return; }
+
+            btn.disabled = true;
+            try {
+                if (authMode === 'register') {
+                    await doRegister(username, password, errEl);
+                } else {
+                    await doLogin(username, password, errEl);
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function doRegister(username, password, errEl) {
+            try {
+                const resp = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await resp.json().catch(() => ({}));
+
+                if (data.msg === "用户名已存在") {
+                    errEl.style.color = '#e03131';
+                    errEl.textContent = data.msg;
+                    return;
+                }
+                if (data.detail) {
+                    errEl.style.color = '#e03131';
+                    errEl.textContent = data.detail;
+                    return;
+                }
+
+                errEl.style.color = '#2f9e44';
+                errEl.textContent = '注册成功，正在登录...';
+                authMode = 'login';
+                updateAuthModalText();
+                await doLogin(username, password, errEl);
+            } catch (e) {
+                console.error(e);
+                errEl.style.color = '#e03131';
+                errEl.textContent = '请求失败，请检查后端是否启动';
+            }
+        }
+
+        async function doLogin(username, password, errEl) {
+            try {
+                const resp = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await resp.json().catch(() => ({}));
+
+                if (data.msg === "密码或用户名错误") {
+                    errEl.style.color = '#e03131';
+                    errEl.textContent = data.msg;
+                    return;
+                }
+
+                if (!data.token) {
+                    errEl.style.color = '#e03131';
+                    errEl.textContent = '登录失败，未获取到 Token';
+                    return;
+                }
+
+                currentToken = data.token;
+                currentUser  = username;
+                localStorage.setItem(TOKEN_KEY, currentToken);
+                localStorage.setItem(USER_KEY, currentUser);
+
+                renderUserBar();
+                closeAuthModal();
+            } catch (e) {
+                console.error(e);
+                errEl.style.color = '#e03131';
+                errEl.textContent = '请求失败，请检查后端是否启动';
+            }
+        }
 
         function onFilesSelected(event) {
             const files = Array.from(event.target.files || []);
@@ -228,27 +451,12 @@
             return bubble;
         }
 
-        function appendLoading() {
-            removeWelcome();
-            const chatArea = document.getElementById('chatArea');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'message ai';
-            msgDiv.id = 'loadingMessage';
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble loading';
-            bubble.textContent = 'AI 正在检查日程';
-            msgDiv.appendChild(bubble);
-            chatArea.appendChild(msgDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
-            return msgDiv;
-        }
-
-        function removeLoading() {
-            const el = document.getElementById('loadingMessage');
-            if (el) el.remove();
-        }
-
         async function sendMessage() {
+            if (!currentToken) {
+                openAuthModal('login');
+                return;
+            }
+
             const input = document.getElementById('questionInput');
             const question = input.value.trim();
             if (!question) { alert('请输入你的问题'); input.focus(); return; }
@@ -260,13 +468,17 @@
             const attachTag = pendingFiles.length > 0 ? '📎 ' + pendingFiles.map(p => p.name).join('、') : '';
             appendMessage('user', question, attachTag);
             input.value = '';
-            appendLoading();
+
+            const aiBubble = appendMessage('ai', '思考中...');
 
             try {
                 const allFilesContent = await buildAllFilesContent();
                 const response = await fetch(`${API_BASE}/check_flexible`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentToken
+                    },
                     body: JSON.stringify({
                         question: question,
                         all_files_content: allFilesContent,
@@ -274,27 +486,59 @@
                     })
                 });
 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                removeLoading();
-
-                let resultText = '';
-                if (data && typeof data === 'object') {
-                    if (typeof data.result === 'string') resultText = data.result;
-                    else if (typeof data.answer === 'string') resultText = data.answer;
-                    else if (data.error) resultText = '❌ ' + String(data.error);
-                    else resultText = JSON.stringify(data, null, 2);
-                } else {
-                    resultText = String(data);
+                if (response.status === 401) {
+                    aiBubble.innerText = '⚠️ 登录已过期，请重新登录。';
+                    logout();
+                    return;
                 }
 
-                appendMessage('ai', resultText);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let fullText = '';
+                let isFirstChunk = true;
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const jsonStr = line.substring(6);
+                                const data = JSON.parse(jsonStr);
+                                const chunkText = data.text;
+
+                                if (chunkText) {
+                                    if (isFirstChunk) {
+                                        aiBubble.innerText = '';
+                                        isFirstChunk = false;
+                                    }
+                                    fullText += chunkText;
+                                    aiBubble.innerText = fullText;
+
+                                    const chatArea = document.getElementById('chatArea');
+                                    chatArea.scrollTop = chatArea.scrollHeight;
+                                }
+                            } catch (e) {
+                                console.warn("解析数据失败:", line);
+                            }
+                        }
+                    }
+                }
+
                 pendingFiles = [];
                 renderFileChips();
+
             } catch (error) {
                 console.error(error);
-                removeLoading();
-                appendMessage('ai', '❌ 请求失败，请检查后端是否启动且配置了跨域。\n错误信息：' + error.message);
+                aiBubble.innerText = '❌ 请求失败，请检查后端是否启动。\n错误信息：' + error.message;
             } finally {
                 sendBtn.disabled = false;
                 input.disabled = false;
